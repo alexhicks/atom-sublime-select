@@ -35,6 +35,8 @@ module.exports =
     editorBuffer = editor.displayBuffer
     editorElement = atom.views.getView editor
     editorComponent = editorElement.component
+    topOffset = 0
+    leftOffset = 0
 
     mouseStartPos  = null
     mouseEndPos    = null
@@ -50,6 +52,14 @@ module.exports =
 
       if _middleMouseDown(e) or _mainMouseAndKeyDown(e)
         resetState()
+        pixelPosition = editorComponent.pixelPositionForMouseEvent(e)
+        screenPosition = editor.getCursorScreenPosition()
+        cursorRowOffset = (editorBuffer.getLineHeightInPixels() * screenPosition.row)
+        cursorColOffset = (editorBuffer.getDefaultCharWidth() * screenPosition.column)
+        if pixelPosition.top > cursorRowOffset
+          topOffset = Math.abs(pixelPosition.top - cursorRowOffset)
+        if pixelPosition.left > cursorColOffset
+          leftOffset = Math.abs(pixelPosition.left - cursorColOffset)
         mouseStartPos = _screenPositionForMouseEvent(e)
         mouseEndPos   = mouseStartPos
         e.preventDefault()
@@ -83,8 +93,8 @@ module.exports =
     # The editorBuffer one doesnt quite do what I need
     _screenPositionForMouseEvent = (e) ->
       pixelPosition    = editorComponent.pixelPositionForMouseEvent(e)
-      targetTop        = pixelPosition.top
-      targetLeft       = pixelPosition.left
+      targetTop        = pixelPosition.top - topOffset
+      targetLeft       = pixelPosition.left - leftOffset
       defaultCharWidth = editorBuffer.defaultCharWidth
       row              = Math.floor(targetTop / editorBuffer.getLineHeightInPixels())
       targetLeft       = Infinity if row > editorBuffer.getLastRow()
